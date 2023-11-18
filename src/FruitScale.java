@@ -7,156 +7,184 @@
 import java.util.*;
 
 public class FruitScale {
-    // TODO ingen inputDevice? Bara outpuDevice?
     private final InputDevice inputDevice;
     private final OutputDevice outputDevice;
     private final List<Product> products;
-    private final List<Product> promoProducts;
     private final List<Employee> employees;
     private final Authentication userStatus;
+    private final Cart cart;
 
     public FruitScale() {
         this.inputDevice = new InputDevice();
         this.outputDevice = new OutputDevice(Authentication.LOGGED_OUT);
         this.products = new ArrayList<>();
-        this.promoProducts = new ArrayList<>();
         this.employees = new ArrayList<>();
         this.userStatus = Authentication.LOGGED_OUT;
+        this.cart = new Cart();
     }
 
     /**
-     * Starts the program.
+     * Calls methods based on user's input.
      * Loops until the user inputs "Q" or "q".
      */
     public void runAsCustomer() {
-//        System.out.println();
-//        System.out.println("Starting program...");
-//        System.out.println("Welcome to the fruit scale. You will now get multiple choices.");
+        /*
+        Adding data just to run program
+         */
+        this.employees.add(new Employee("oskar", "123"));
+        this.employees.add(new Employee("ulf", "234"));
 
-        this.employees.add(new Employee("hej", "123"));
-        this.employees.add(new Employee("då", "234"));
-
-        this.products.add(new Product("Banana"));
-        this.products.add(new Product("potato", new Price(0, false)));
         List<String> tempPG1 = new ArrayList<>();
         tempPG1.add("Fruit");
-        tempPG1.add("Stone");
-        this.products.add(new Product("pear", tempPG1));
+        tempPG1.add("Rose plant");
+        this.products.add(new Product("pear", new Price(34.909090, false), tempPG1));
         List<String> tempPG2 = new ArrayList<>();
         tempPG2.add("Fruit");
-        tempPG2.add("Stone");
-        tempPG2.add("exotic");
+        tempPG2.add("Rose plant");
+        tempPG2.add("Something");
         this.products.add(new Product("Apple", new Price(19.45, true), tempPG2));
 
+        this.products.add(new PromoProduct("kiwi", new Price(20, false), new ArrayList<>(),
+                new Discount(20), 5));
+        this.products.add(new PromoProduct("Potatoes", new Price(9.99, true), new ArrayList<>(),
+                new Discount(15), 2));
+
+        /*
+        Program starts here
+         */
         outputDevice.initialize();
 
         String mainMenuChoice;
         do {
-            this.outputDevice.printMainMenu();
-            mainMenuChoice = this.inputDevice.readString();
-
-            switch (mainMenuChoice) {
-                case "1" -> printAllProducts();
-                case "2" -> printPromoProducts();
-                case "3" -> searchProductByName();
-                case "4" -> searchProductByCategory();
-                case "5" -> runAsEmployee();
-                case "Q", "q" -> exitProgram();
-                default -> this.outputDevice.print("Error! Please enter the corresponding integer of your choice.");
+            this.outputDevice.printCustomerMenu();
+            try {
+                mainMenuChoice = this.inputDevice.readString();
+                switch (mainMenuChoice) {
+                    case "1" -> this.outputDevice.printProducts(this.products);
+                    case "2" -> printPromoProducts();
+                    case "3" -> searchProductByName();
+                    case "4" -> searchProductByCategory();
+                    case "5" -> this.outputDevice.printProducts(this.cart.getItems());
+                    case "6" -> checkOut();
+                    case "7" -> runAsEmployee();
+                    case "Q", "q" -> exitProgram();
+                    default -> this.outputDevice.print("Error! Please enter the corresponding integer of your choice.");
+                }
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Please enter the corresponding integer of your choice.");
             }
         } while (true);
     }
 
-    private void printPromoProducts() {
-        this.outputDevice.printProducts(this.promoProducts);
-    }
-
+    /**
+     * Calls methods based on user's input.
+     * Loops until the user inputs "Q" or "q".
+     */
     private void runAsEmployee() {
-        String username = this.inputDevice.readUsername();
-        String password = this.inputDevice.readPassword();
+        if (!logIn()) {
+            return;
+        }
 
-        if (tryLogin(username, password)) {
-            this.outputDevice.switchSession(Authentication.LOGGED_IN);
+        this.outputDevice.switchSession(Authentication.LOGGED_IN);
 
-            boolean run = true;
-            String menuChoice;
-            do {
-                this.outputDevice.printEmployeeMenu();
+        boolean run = true;
+        String menuChoice;
+        do {
+            this.outputDevice.printEmployeeMenu();
+            try {
                 menuChoice = this.inputDevice.readString();
-
                 switch (menuChoice) {
-                    case "1" -> addProduct();
-                    case "2" -> tryRemoveProduct();
-                    case "3" -> addPromoProduct();
-                    // TODO
-                    //case "4" -> tryRemovePromoProduct();
-                    //case "5" -> editPromoProduct();
-                    case "6" -> {
-                        logoutAdmin();
+                    case "1" -> this.outputDevice.printProducts(this.products);
+                    case "2" -> addProduct();
+                    case "3" -> tryRemoveProduct();
+                    //case "4" -> addPromoProduct();
+                    //case "5" -> tryRemovePromoProduct();
+                    //case "6" -> editPromoProduct();
+                    case "7" -> {
+                        logOut();
                         run = false;
                     }
+                    case "Q", "q" -> exitProgram();
                     default -> this.outputDevice.print("Error! Please enter the corresponding integer of your choice.");
                 }
-            } while (run);
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Please enter the corresponding integer of your choice.");
+            }
+        } while (run);
+    }
+
+    /**
+     * Tries to log in an employee.
+     * @return true if login was sucessful, otherwise false.
+     */
+    private boolean logIn() {
+        String username;
+        String password;
+
+        do {
+            this.outputDevice.print("Enter username");
+            this.outputDevice.print("> ");
+            try {
+                username = this.inputDevice.readString();
+                break;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Username cannot be blank");
+            }
+        } while (true);
+
+        do {
+            this.outputDevice.print("Enter password");
+            this.outputDevice.print("> ");
+            try {
+                password = this.inputDevice.readString();
+                break;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Password cannot be blank");
+            }
+        } while (true);
+
+        Employee currentEmployee = findEmployee(username);
+
+        if (currentEmployee == null) {
+            this.outputDevice.print("Error! Could not find employee");
+            return false;
+        } else {
+            if (currentEmployee.getPassword().equals(password)) {
+                this.outputDevice.print("Log in successful!");
+                return true;
+            } else {
+                this.outputDevice.print("Error! Wrong password");
+                return false;
+            }
         }
     }
 
-    private void addPromoProduct() {
-        // TODO
-
-    }
-
-    private void logoutAdmin() {
+    /**
+     * Logs out an Employee
+     */
+    private void logOut() {
         System.out.println("Logging out...");
         this.outputDevice.switchSession(Authentication.LOGGED_OUT);
     }
 
-    private boolean tryLogin(String username, String password) {
-        Employee currentEmployee = findEmployee(username);
-
-        if (currentEmployee != null) {
-            if (currentEmployee.getPassword().equals(password)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private Employee findEmployee(String username) {
-        for (Employee employee : this.employees) {
-            if (employee.getUserName().equalsIgnoreCase(username)) {
-                return employee;
-            }
-        }
-        return null;
-    }
-
     /**
-     * Menu for the current product.
-     * Calls printTotalPrice and readWeight() or readQuantity()
-     * @param product the current product
+     * Prints a string representation of the cart and prompts the user to checkout (end the program)
      */
-    private void productMenu(Product product) {
-        this.outputDevice.printProductMenu(product);
+    private void checkOut() {
+        this.outputDevice.print("Your cart: ");
 
-        if (product.getPrice().isPerKG()) {
-            double weight = inputDevice.readWeight();
-            double totalPrice = computeTotalPrice(product, weight);
-            this.outputDevice.printTotalPrice(totalPrice);
-        } else {
-            int quantity = inputDevice.readQuantity();
-            double totalPrice = computeTotalPrice(product, (double)quantity);
-            this.outputDevice.printTotalPrice(totalPrice);
+        this.outputDevice.print(this.cart.toString());
+
+        this.outputDevice.print("Would you like to checkout?");
+        try {
+            boolean checkout = this.inputDevice.readYesOrNo();
+            if (checkout) {
+                this.outputDevice.print("Thank you! See you soon!");
+                exitProgram();
+            }
+        } catch (InputMismatchException iME) {
+            this.outputDevice.print("Error! Enter 'y' or 'n'");
         }
-    }
-
-    /**
-     * Prints all products in productList.
-     */
-    private void printAllProducts() {
-        this.outputDevice.print("All registered products:");
-        this.outputDevice.printProducts(this.products);
     }
 
     /**
@@ -166,23 +194,16 @@ public class FruitScale {
         this.outputDevice.print("Adding new product");
 
         // Prompt and read name
-        String name = this.inputDevice.readName();
+        String name = promptName();
 
         // Prompt and read price
-        Price price = this.inputDevice.readPrice();
+        Price price = promptPrice();
 
         // Prompt and read product group
-        List<String> productGroup = this.inputDevice.readProductGroups();
+        List<String> productGroups = promptProductGroups();
 
-        if (price.getValue() == 0 && productGroup == null) {
-            this.products.add(new Product(name));
-        } else if (price.getValue() == 0) {
-            this.products.add(new Product(name, productGroup));
-        } else if (productGroup == null) {
-            this.products.add(new Product(name, price));
-        } else {
-            this.products.add(new Product(name, price, productGroup));
-        }
+
+        this.products.add(new Product(name, price, productGroups));
 
         this.outputDevice.print("Product added!");
     }
@@ -193,21 +214,23 @@ public class FruitScale {
     private void tryRemoveProduct() {
         this.outputDevice.print("Removing product");
 
+        this.outputDevice.print("Enter the name of the product you want to remove");
+        this.outputDevice.print("> ");
         String userStr = this.inputDevice.readName();
         Product productToRemove = findProductByName(userStr);
 
-        // If product was found
-        if (productToRemove != null) {
-            this.outputDevice.print(productToRemove.getName() + " was removed from registered products!");
+        try {
             this.products.remove(productToRemove);
-        } else { // If no product was found
-            this.outputDevice.print("Could not find " + userStr + " in registered products");
+            this.outputDevice.print(productToRemove.toString());
+            this.outputDevice.print(productToRemove.getName() + " was removed from registered products!");
+        } catch (NullPointerException nPE) {
+            this.outputDevice.print("Error! Could not find " + userStr + " in registered products");
         }
     }
 
     /**
      * Tries to find a product by name.
-     * Calls findProductByName() and productMenu() or printProductsFound().
+     * Calls findProductByName() and addToCart() or printProductsFound().
      */
     private void searchProductByName() {
         String userStr;
@@ -216,31 +239,35 @@ public class FruitScale {
             this.outputDevice.print("");
             this.outputDevice.print("""
                     \tSearch by name
-                    Enter complete name to continue to product menu
+                    Enter complete name to continue to checkout
                     Enter 'menu' to return to main menu""");
-            userStr = this.inputDevice.readName();
+            try {
+                userStr = this.inputDevice.readName();
 
-            if (userStr.equalsIgnoreCase("menu")) {
-                this.outputDevice.print("Returning to main menu...");
-                return;
-            }
+                if (userStr.equalsIgnoreCase("menu")) {
+                    this.outputDevice.print("Returning to main menu...");
+                    return;
+                }
 
-            Product currentProduct = findProductByName(userStr);
+                Product currentProduct = findProductByName(userStr);
 
-            // If a product was found
-            if (currentProduct != null) {
-                this.outputDevice.print("Product found!");
-                this.outputDevice.print("");
-                productMenu(currentProduct);
-            } else { // If no product was found
-                printProductsFound(userStr);
+                // If a product was found
+                if (currentProduct != null) {
+                    this.outputDevice.print("Product found!");
+                    this.outputDevice.print(currentProduct.toString());
+                    this.outputDevice.print("");
+                    addToCart(currentProduct);
+                } else { // If no product was found
+                    printProductsFound(userStr);
+                }
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Enter characters");
             }
         } while (true);
     }
 
     /**
-     * Tries to find a product by category.
-     * Calls findProductsByCategory(), readName() and productMenu().
+     * Tries to find a product by category. If a product was found, addToCart() is called.
      */
     private void searchProductByCategory() {
         HashSet<String> uniqueProductGroupsSet = new HashSet<>();
@@ -264,6 +291,7 @@ public class FruitScale {
             // Prompts user and reads input.
             this.outputDevice.print("");
             this.outputDevice.print("Enter a category to continue");
+            this.outputDevice.print("Enter 'menu' to return to main menu");
             this.outputDevice.print("> ");
             String userStr = this.inputDevice.readString();
 
@@ -283,7 +311,7 @@ public class FruitScale {
 
                 // Prompts user and reads input
                 this.outputDevice.print("");
-                this.outputDevice.print("Enter complete name to continue to product menu\n" +
+                this.outputDevice.print("Enter complete name to continue to checkout\n" +
                         "Enter 'menu' to return to main menu");
                 userStr = this.inputDevice.readName();
 
@@ -292,10 +320,10 @@ public class FruitScale {
                     return;
                 }
 
-                // Calls method productMenu() if user's string equals a products name
+                // Calls method addToCart() if user's string equals a products name
                 for (Product product : foundProducts) {
                     if (product.getName().equalsIgnoreCase(userStr)) {
-                        productMenu(product);
+                        addToCart(product);
                     }
                 }
             } else { // If no products were found
@@ -305,12 +333,194 @@ public class FruitScale {
     }
 
     /**
-     * Exits the program.
+     * Prompts user and tries to add a Product to the Cart.
+     * @param currentProduct Object to be added to Cart.
      */
-    private void exitProgram() {
-        System.out.println();
-        System.out.println("Exiting program...");
-        System.exit(0);
+    public void addToCart(Product currentProduct) {
+        boolean add;
+
+        this.outputDevice.print("Would you like to add " + currentProduct.getName() + " to cart? (y/n)");
+        this.outputDevice.print("> ");
+        try {
+            add = this.inputDevice.readYesOrNo();
+        } catch (InputMismatchException iME) {
+            this.outputDevice.print("Error! Enter 'y' or 'n'");
+            return;
+        }
+
+        if (add) {
+            boolean isPerKg = currentProduct.getPrice().isPerKG();
+            double amount = isPerKg ? promptWeight() : promptQuantity();
+
+            if (currentProduct instanceof PromoProduct promoProduct) {
+                this.cart.applyDiscount(promoProduct, amount);
+
+                if (isPerKg) {
+                    promoProduct.getPrice().setValue(currentProduct.getPrice().getValue() * amount);
+                    this.cart.add(promoProduct);
+                    this.outputDevice.print(amount + " kg " + promoProduct.getName() + "s was added to your cart!");
+                } else {
+                    List<Product> promoProducts = Collections.nCopies((int) amount, promoProduct);
+                    this.cart.add(promoProducts);
+                    this.outputDevice.print(amount + " st " + promoProduct.getName() + "s was added to your cart!");
+                }
+            } else {
+                this.cart.add(currentProduct);
+            }
+        }
+    }
+
+    /**
+     * Prints a string representation of the products that is promotional
+     */
+    private void printPromoProducts() {
+        this.outputDevice.print("Promotional products:");
+        for (Product product : this.products) {
+            // If product is promotional and if products price is per kg
+            if (product instanceof PromoProduct && product.getPrice().isPerKG()) {
+                this.outputDevice.print("\n" + "Buy " + ((PromoProduct) product).getPrerequisite() + " kg or more to get "
+                        + ((PromoProduct) product).getDiscount().toString() + "% discount");
+                this.outputDevice.print(product.toString());
+                this.outputDevice.print("Price with discount: "
+                        + ((PromoProduct) product).displayReducedPrice());
+                // If product is promotional and if products price is not per kg
+            } else if (product instanceof PromoProduct && !product.getPrice().isPerKG()) {
+                this.outputDevice.print("\n" + "Buy " + ((PromoProduct) product).getPrerequisite() + " st or more to get "
+                        + ((PromoProduct) product).getDiscount().toString() + "% discount");
+                this.outputDevice.print(product.toString());
+                this.outputDevice.print("Price with discount: "
+                        + ((PromoProduct) product).displayReducedPrice());
+            }
+        }
+    }
+
+    /**
+     * Asks user for product groups and gets user input. Also creates a list oof users input.
+     * @return A list of users input.
+     */
+    private List<String> promptProductGroups() {
+        String strProductGroup;
+        List<String> productGroups;
+        do {
+            this.outputDevice.print("Enter the products categories\n" +
+                    "If more than one, separate with comma (fruit, exotic, citrus etc.)");
+            this.outputDevice.print("Leave blank to not enter any product groups.");
+            this.outputDevice.print("> ");
+
+            try {
+                strProductGroup = this.inputDevice.readProductGroups();
+                break;
+            } catch (IllegalArgumentException iME) {
+                this.outputDevice.print("Error! Enter characters");
+            }
+        } while (true);
+
+        if (strProductGroup.isBlank()) {
+            return null;
+        }
+
+        // Initializes the list to an ArrayList and
+        // splits the input string into separate elements by ',' and adds them to the Arraylist
+        productGroups = new ArrayList<>(Arrays.asList(strProductGroup.split(",")));
+
+        // Removes all empty elements
+        productGroups.removeAll(Arrays.asList("", null));
+
+        return productGroups;
+    }
+
+    /**
+     * Prompts user for creating a new Price.
+     * @return A new Price based on users input.
+     */
+    private Price promptPrice() {
+        double value;
+        boolean pricePerKilo = false;
+
+        do {
+            this.outputDevice.print("Enter the product's price");
+            this.outputDevice.print("Leave blank to not enter price");
+            this.outputDevice.print("> ");
+
+            try {
+                value = this.inputDevice.readPrice();
+                break;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Enter numbers");
+            }
+        } while (true);
+
+        if (value != 0) {
+            do {
+                this.outputDevice.print("Is the price in kr/kg? (y/n)");
+                this.outputDevice.print("> ");
+
+                try {
+                    pricePerKilo = this.inputDevice.readYesOrNo();
+                    break;
+                } catch (InputMismatchException iME) {
+                    this.outputDevice.print("Error! Enter 'y' or 'n'");
+                }
+            } while (true);
+        }
+
+        return new Price(value, pricePerKilo);
+    }
+
+    /**
+     * Prompts user for getting a product name.
+     * @return A string representing the name.
+     */
+    private String promptName() {
+        String name;
+        do {
+            this.outputDevice.print("Enter the products name");
+            this.outputDevice.print("> ");
+            try {
+                name = this.inputDevice.readName();
+                break;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Enter characters");
+            }
+        } while (true);
+
+        return name;
+    }
+
+    /**
+     * Prompts user and reads quantity
+     * @return Quantity as an int
+     */
+    private int promptQuantity() {
+        int quantity;
+        do {
+            this.outputDevice.print("Enter desired quantity");
+            this.outputDevice.print("> ");
+            try {
+                quantity = this.inputDevice.readInteger();
+                return quantity;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Enter numbers");
+            }
+        } while (true);
+    }
+
+    /**
+     * Prompts user and reads quantity
+     * @return Weight as a double
+     */
+    private double promptWeight() {
+        double weight;
+        do {
+            this.outputDevice.print("Enter desired weight (in kg)");
+            this.outputDevice.print("> ");
+            try {
+                weight = this.inputDevice.readDouble();
+                return weight;
+            } catch (InputMismatchException iME) {
+                this.outputDevice.print("Error! Enter numbers");
+            }
+        } while (true);
     }
 
     /**
@@ -347,6 +557,10 @@ public class FruitScale {
         return productsFound.toArray(new Product[i]);
     }
 
+    /**
+     * Prints products found containing parameter
+     * @param userStr The string to be matched for finding Products
+     */
     private void printProductsFound(String userStr) {
         List<Product> productsFound = new ArrayList<>();
         for (Product product : this.products) {
@@ -358,12 +572,25 @@ public class FruitScale {
     }
 
     /**
-     * Computes and prints the total price of a product
-     * @param product The object to be computed
-     * @param amount The amount to be computed
+     * Tries to find an Employee
+     * @param username String to match registered Employee with
+     * @return An Employee if found, otherwise null.
      */
-    private double computeTotalPrice(Product product, Double amount) {
-        double sum = product.getPrice().getValue() * amount;
-        return sum;
+    private Employee findEmployee(String username) {
+        for (Employee employee : this.employees) {
+            if (employee.getUserName().equalsIgnoreCase(username)) {
+                return employee;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Exits the program.
+     */
+    private void exitProgram() {
+        System.out.println();
+        System.out.println("Exiting program...");
+        System.exit(0);
     }
 }

@@ -1,26 +1,33 @@
+/**
+ * @author Erik Hillborg, erik.hillborg@iths.se
+ */
+
 import java.util.List;
 
 public class PromoProduct extends Product {
+    private Discount discount;
+    private int prerequisite;
 
-    private double reducedPrice;
-
-    public PromoProduct(String name, double reducedPrice) {
-        super(name);
-        this.reducedPrice = reducedPrice;
-    }
-
-    public PromoProduct(String name, Price price, double reducedPrice) {
-        super(name, price);
-        this.reducedPrice = reducedPrice;
-    }
-
-    public PromoProduct(String name, List<String> productGroups, double reducedPrice) {
-        super(name, productGroups);
-        this.reducedPrice = reducedPrice;
-    }
-
-    public PromoProduct(String name, Price price, List<String> productGroups, double reducedPrice) {
+    public PromoProduct(String name, Price price, List<String> productGroups, Discount discount, int prerequisite) {
         super(name, price, productGroups);
-        this.reducedPrice = reducedPrice;
+        this.discount = discount;
+        this.prerequisite = prerequisite;
+    }
+
+    public Discount getDiscount() {
+        return discount;
+    }
+
+    public int getPrerequisite() {
+        return prerequisite;
+    }
+
+    /**
+     * @return A string representation of the reduced price.
+     */
+    public String displayReducedPrice() {
+        double discount = this.price.getValue() * this.discount.getPercent();
+        double priceWithDiscount = this.price.getValue() - discount;
+        return "" + priceWithDiscount;
     }
 }

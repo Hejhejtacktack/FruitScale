@@ -1,3 +1,7 @@
+/**
+ * @author Erik Hillborg, erik.hillborg@iths.se
+ */
+
 public class Price {
     private double value;
     private boolean isPerKG;

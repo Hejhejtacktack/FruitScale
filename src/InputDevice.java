@@ -1,176 +1,122 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+/**
+ * Handles all input from keyboard.
+ *
+ * @author Erik Hillborg, erik.hillborg@iths.se
+ */
+
+import java.util.*;
 
 public class InputDevice{
     private final Scanner scanner;
-    // TODO ingen outputdevice i inputdevice
-    private final OutputDevice outputDevice;
 
     public InputDevice() {
         this.scanner = new Scanner(System.in);
-        this.outputDevice = new OutputDevice(Authentication.LOGGED_OUT);
     }
 
-    public String readString() {
-        return this.scanner.nextLine().trim();
+    public String readString() throws InputMismatchException {
+        String input = this.scanner.nextLine().trim();
+
+        if (input.isBlank()) {
+            throw new InputMismatchException();
+        }
+
+        return input;
     }
 
     /**
-     * Prints name prompt and reads user's input. Forces user to enter a string.
-     * Loops if input is a number and if input is blank.
+     * Tries to read input as a string.
      * @return user's input as string.
      */
-    public String readName() {
-        String name;
-        do {
-            this.outputDevice.print("Enter the products name");
-            this.outputDevice.print("> ");
-            name = scanner.nextLine().trim();
+    public String readName() throws InputMismatchException {
+        String name = scanner.nextLine().trim();
 
-            if (name.isBlank()) {
-                System.out.println("Error! Name is required.");
-            }
-        } while (isDouble(name) || name.isBlank());
+        if (isDouble(name) || name.isBlank()) {
+            throw new InputMismatchException();
+        }
 
         return name;
     }
 
     /**
-     * Prints price prompt and reads user's input.
-     * Loops if input isn't a number.
      * Converts user's input to a positive number.
      * @return user's input as double if input is not blank, otherwise 0.
      */
-    public Price readPrice() {
-        String strPrice;
-        boolean pricePerKg;
+    public double readPrice() throws InputMismatchException {
+        String strPrice = scanner.nextLine().trim();
 
-        this.outputDevice.print("Enter the product's price");
-        this.outputDevice.print("> ");
-        strPrice = scanner.nextLine().trim();
-
-        if (!strPrice.isBlank()) {
-            pricePerKg = readPricePerKg();
-        } else {
-            strPrice = "0";
-            pricePerKg = false;
+        if (strPrice.isBlank()) {
+            return 0;
+        } else if (!isDouble(strPrice)) {
+            throw new InputMismatchException();
         }
 
-        return new Price(Double.parseDouble(strPrice), pricePerKg);
+        return Double.parseDouble(strPrice);
     }
 
     /**
-     * Asks if price is per kilo and reads user's input.
-     * @return true if price is per kilo, otherwise false.
+     * Reads yes and no input.
+     * @return True if input is 'y' and false if input is 'n'.
+     * @throws InputMismatchException
      */
-    public boolean readPricePerKg() {
-        do {
-            this.outputDevice.print("Is the price in kr/kg? (y/n)");
-            this.outputDevice.print("> ");
-            String pricePerKilo = scanner.nextLine().trim();
+    public boolean readYesOrNo() throws InputMismatchException {
+        String input = scanner.nextLine().trim();
 
-            if (pricePerKilo.equalsIgnoreCase("y")) {
+        switch (input) {
+            case "y", "Y" -> {
                 return true;
-            } else if (pricePerKilo.equalsIgnoreCase("n")) {
+            }
+            case "n", "N" -> {
                 return false;
             }
-        } while (true);
+            default -> throw new InputMismatchException();
+        }
     }
 
     /**
-     * Prints product group prompt and reads user's input.
-     * Loops if input is a number.
-     * @return user's input as list if input is not blank, otherwise null.
+     * Tries to read input as string and trims away all non-characters.
+     * @return A trimmed String.
+     * @throws IllegalArgumentException
      */
-    public List<String> readProductGroups() {
-        String strProductGroup;
-        List<String> productGroups;
-        do {
-            this.outputDevice.print("Enter the products categories\n" +
-                    "If more than one, separate with comma (fruit, exotic, citrus etc.)");
-            this.outputDevice.print("> ");
-            strProductGroup = scanner.nextLine().trim();
-            if (strProductGroup.isBlank()) {
-                return null;
-            }
-            // Removes all tokens that is not a character and a comma
-            strProductGroup = strProductGroup.replaceAll("[^A-Za-z0-9,]", "");
-            // Initializes the list to an ArrayList and
-            // splits the input string into separate elements by ',' and adds them to the Arraylist
-            productGroups = new ArrayList<>(Arrays.asList(strProductGroup.split(",")));
+    public String readProductGroups() throws IllegalArgumentException {
+        String strProductGroup = scanner.nextLine().trim();
 
-            // Removes alla empty elements
-            productGroups.removeAll(Arrays.asList("", null));
+        if (isDouble(strProductGroup)) {
+            throw new IllegalArgumentException();
+        }
 
-        } while (isDouble(strProductGroup));
+        // Removes all tokens that is not a character and a comma
+        strProductGroup = strProductGroup.replaceAll("[^A-Za-z0-9,]", "");
 
-        return productGroups;
+        return strProductGroup;
     }
 
     /**
-     * Prints quantity prompt and reads user's input.
-     * Converts user's input to a positive number.
-     * @return user's input as an int if input is not blank, otherwise 0;
+     * Tries to read input as an integer.
+     * @return An int.
+     * @throws InputMismatchException
      */
-    public int readQuantity() {
-        String strQuantity;
-        do {
-            this.outputDevice.print("Enter an amount to calculate total price");
-            this.outputDevice.print("> ");
-            strQuantity = scanner.nextLine().trim();
+    public int readInteger() throws InputMismatchException {
+        String input = scanner.nextLine().trim();
 
-            if (strQuantity.isBlank()) {
-                return 0;
-            }
+        if (!isInteger(input) || input.isBlank()) {
+            throw new InputMismatchException();
+        }
 
-        } while (!isInteger(strQuantity));
-
-        return Math.abs(Integer.parseInt(strQuantity));
+        return Math.abs(Integer.parseInt(input));
     }
 
     /**
-     * Prints weight prompt and reads user's input.
-     * Converts user's input to a positive number.
-     * @return user's input as an double if input is not blank, otherwise 0;
+     * Tries to read input as a double.
+     * @return A double.
      */
-    public double readWeight() {
-        String strWeight;
-        do {
-            this.outputDevice.print("Enter a weight to calculate total price");
-            this.outputDevice.print("> ");
-            strWeight = scanner.nextLine().trim();
+    public double readDouble() {
+        String input = scanner.nextLine().trim();
 
-            if (strWeight.isBlank()) {
-                return 0;
-            }
+        if (!isDouble(input) || input.isBlank()) {
+            throw new InputMismatchException();
+        }
 
-        } while (!isDouble(strWeight));
-
-        return Math.abs(Double.parseDouble(strWeight));
-    }
-
-    public String readPassword() {
-        String password;
-        do {
-            this.outputDevice.print("Enter password");
-            this.outputDevice.print("> ");
-            password = scanner.nextLine().trim();
-        } while (password.isBlank());
-
-        return password;
-    }
-
-    public String readUsername() {
-        String username;
-        do {
-            this.outputDevice.print("Enter username");
-            this.outputDevice.print("> ");
-            username = scanner.nextLine().trim();
-        } while (username.isBlank());
-
-        return username;
+        return Math.abs(Double.parseDouble(input));
     }
 
     /**

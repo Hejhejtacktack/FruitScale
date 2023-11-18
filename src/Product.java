@@ -4,34 +4,22 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Product {
     private String name;
-    private Price price;
+    protected Price price;
     private List<String> productGroups;
-
-    public Product(String name) {
-        this.name = capitalize(name);
-        this.price = new Price(0, false);
-        this.productGroups = new ArrayList<>();
-    }
-
-    public Product(String name, Price price) {
-        this.name = capitalize(name);
-        this.price = price;
-        this.productGroups = new ArrayList<>();
-    }
-
-    public Product(String name, List<String> productGroups) {
-        this.name = capitalize(name);
-        this.price = new Price(0, false);
-        this.productGroups = productGroups;
-    }
 
     public Product(String name, Price price, List<String> productGroups) {
         this.name = capitalize(name);
         this.price = price;
-        this.productGroups = productGroups;
+        if (productGroups == null) {
+            this.productGroups = new ArrayList<>();
+            this.productGroups.add("Unassigned");
+        } else {
+            this.productGroups = productGroups;
+        }
     }
 
     public String getName() {
@@ -65,6 +53,16 @@ public class Product {
      */
     private String capitalize(String string) {
         return string.substring(0, 1).toUpperCase() + string.substring(1).toLowerCase();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Product) {
+            return Objects.equals(this.name, ((Product) other).name);
+        }
+        else {
+            return false;
+        }
     }
 
     /**

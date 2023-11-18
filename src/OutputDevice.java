@@ -1,4 +1,9 @@
-import java.util.ArrayList;
+/**
+ * Handles all printing to screen.
+ *
+ * @author Erik Hillborg, erik.hillborg@iths.se
+ */
+
 import java.util.List;
 
 public class OutputDevice {
@@ -10,6 +15,10 @@ public class OutputDevice {
         switchSession(userStatus);
     }
 
+    /**
+     * Sets text color based on parameter.
+     * @param userStatus Status of the session.
+     */
     public void switchSession(Authentication userStatus) {
         switch (userStatus) {
             case LOGGED_IN -> this.textColor = ANSI_GREEN;
@@ -17,12 +26,19 @@ public class OutputDevice {
         }
     }
 
+    /**
+     * Sets upp the program.
+     */
     public void initialize() {
         System.out.println();
         System.out.println("Starting program...");
         System.out.println("Welcome to the fruit scale. You will now get multiple choices.");
     }
 
+    /**
+     * Prints to console.
+     * @param string String to be printed.
+     */
     public void print(String string) {
         if (string.equals("> ")) {
             System.out.print(string);
@@ -31,7 +47,10 @@ public class OutputDevice {
         }
     }
 
-    public void printMainMenu() {
+    /**
+     * Prints customer menu.
+     */
+    public void printCustomerMenu() {
         System.out.println(this.textColor);
         System.out.print("""
                 \tMain menu
@@ -43,12 +62,17 @@ public class OutputDevice {
                 2. Show promotional products
                 3. Search for product by name
                 4. Search for product by category
-                5. Login as admin
+                5. View cart
+                6. Checkout
+                7. Login as employee
                 Your choice
                 """);
         System.out.print("> ");
     }
 
+    /**
+     * Prints employee menu.
+     */
     public void printEmployeeMenu() {
         System.out.println(this.textColor);
         System.out.print("""
@@ -57,28 +81,22 @@ public class OutputDevice {
                 Enter Q to exit the program.
                 """);
         System.out.print("""
-                1. Add new product
-                2. Remove product
-                3. Add promotional product
-                4. Remove promotional product
-                5. Edit promotional product
-                6. Log out
+                1. Show all products
+                2. Add new product
+                3. Remove product
+                4. Add promotional product
+                5. Remove promotional product
+                6. Edit promotional product
+                7. Log out
                 Your choice
                 """);
         System.out.print("> ");
     }
 
-    public void printProductMenu(Product product) {
-        System.out.println("\tProduct menu");
-        System.out.println("Product:");
-        System.out.println(product);
-        System.out.println();
-    }
-
-    public void printTotalPrice(Double sum) {
-        System.out.printf("Total price: %.2f kr\n", sum);
-    }
-
+    /**
+     * Prints the products of parameter list
+     * @param productsFound List to be printed.
+     */
     public void printProducts(List<Product> productsFound) {
         if (productsFound.isEmpty()) {
             System.out.println("No products were found!");

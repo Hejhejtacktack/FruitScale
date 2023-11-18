@@ -1,3 +1,7 @@
+/**
+ * @author Erik Hillborg, erik.hillborg@iths.se
+ */
+
 public class Employee {
     private String userName;
     private String password;
