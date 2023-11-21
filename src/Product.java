@@ -22,6 +22,10 @@ public class Product {
         }
     }
 
+    public Product(Product other) {
+        this(other.getName(), new Price(other.getPrice()), other.getProductGroups());
+    }
+
     public String getName() {
         return name;
     }

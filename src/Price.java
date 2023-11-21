@@ -13,6 +13,10 @@ public class Price {
         this.isPerKG = isPerKG;
     }
 
+    public Price(Price other) {
+        this(other.getValue(), other.isPerKG());
+    }
+
     public double getValue() {
         return value;
     }

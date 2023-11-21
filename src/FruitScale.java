@@ -64,7 +64,7 @@ public class FruitScale {
                     case "2" -> printPromoProducts();
                     case "3" -> searchProductByName();
                     case "4" -> searchProductByCategory();
-                    case "5" -> this.outputDevice.printProducts(this.cart.getItems());
+                    case "5" -> this.outputDevice.print(this.cart.toString());
                     case "6" -> checkOut();
                     case "7" -> runAsEmployee();
                     case "Q", "q" -> exitProgram();
@@ -97,9 +97,9 @@ public class FruitScale {
                     case "1" -> this.outputDevice.printProducts(this.products);
                     case "2" -> addProduct();
                     case "3" -> tryRemoveProduct();
-                    //case "4" -> addPromoProduct();
-                    //case "5" -> tryRemovePromoProduct();
-                    //case "6" -> editPromoProduct();
+                    case "4" -> addPromoProduct();
+                    case "5" -> tryRemovePromoProduct();
+                    case "6" -> editPromoProduct();
                     case "7" -> {
                         logOut();
                         run = false;
@@ -175,12 +175,14 @@ public class FruitScale {
 
         this.outputDevice.print(this.cart.toString());
 
-        this.outputDevice.print("Would you like to checkout?");
+        this.outputDevice.print("Would you like to checkout? (y/n)");
         try {
             boolean checkout = this.inputDevice.readYesOrNo();
             if (checkout) {
                 this.outputDevice.print("Thank you! See you soon!");
                 exitProgram();
+            } else {
+                this.outputDevice.print("Returning to main menu...");
             }
         } catch (InputMismatchException iME) {
             this.outputDevice.print("Error! Enter 'y' or 'n'");
@@ -239,7 +241,7 @@ public class FruitScale {
             this.outputDevice.print("");
             this.outputDevice.print("""
                     \tSearch by name
-                    Enter complete name to continue to checkout
+                    Enter complete product name to continue to checkout
                     Enter 'menu' to return to main menu""");
             try {
                 userStr = this.inputDevice.readName();
@@ -311,7 +313,7 @@ public class FruitScale {
 
                 // Prompts user and reads input
                 this.outputDevice.print("");
-                this.outputDevice.print("Enter complete name to continue to checkout\n" +
+                this.outputDevice.print("Enter complete product name to continue to checkout\n" +
                         "Enter 'menu' to return to main menu");
                 userStr = this.inputDevice.readName();
 
@@ -352,20 +354,32 @@ public class FruitScale {
             boolean isPerKg = currentProduct.getPrice().isPerKG();
             double amount = isPerKg ? promptWeight() : promptQuantity();
 
-            if (currentProduct instanceof PromoProduct promoProduct) {
-                this.cart.applyDiscount(promoProduct, amount);
-
-                if (isPerKg) {
-                    promoProduct.getPrice().setValue(currentProduct.getPrice().getValue() * amount);
-                    this.cart.add(promoProduct);
-                    this.outputDevice.print(amount + " kg " + promoProduct.getName() + "s was added to your cart!");
-                } else {
-                    List<Product> promoProducts = Collections.nCopies((int) amount, promoProduct);
-                    this.cart.add(promoProducts);
-                    this.outputDevice.print(amount + " st " + promoProduct.getName() + "s was added to your cart!");
+            Product productToAdd;
+            PromoProduct promoProductToAdd;
+            if (isPerKg) { // If products price is per kg
+                if (currentProduct instanceof PromoProduct promoProduct) { // if product is promotional
+                    promoProductToAdd = new PromoProduct(promoProduct);
+                    this.cart.applyDiscount(promoProductToAdd, amount);
+                    this.cart.add(promoProductToAdd);
+                    this.outputDevice.print(amount + " kg " + promoProductToAdd.getName() + "s was added to your cart!");
+                } else { // if product is not promotional
+                    productToAdd = new Product(currentProduct);
+                    this.cart.add(productToAdd);
+                    this.outputDevice.print(amount + " kg " + productToAdd.getName() + "s was added to your cart!");
                 }
-            } else {
-                this.cart.add(currentProduct);
+            } else { // if products price is not per kg
+                if (currentProduct instanceof PromoProduct promoProduct) { // if product is promotional
+                    promoProductToAdd = new PromoProduct(promoProduct);
+                    this.cart.applyDiscount(promoProductToAdd, amount);
+                    List<Product> promoProducts = Collections.nCopies((int) amount, promoProductToAdd);
+                    this.cart.add(promoProducts);
+                    this.outputDevice.print(amount + " st " + promoProductToAdd.getName() + "s was added to your cart!");
+                } else { // if product is not promotional
+                    productToAdd = new Product(currentProduct);
+                    List<Product> products = Collections.nCopies((int) amount, productToAdd);
+                    this.cart.add(products);
+                    this.outputDevice.print(amount + " st " + productToAdd.getName() + "s was added to your cart!");
+                }
             }
         }
     }
@@ -377,19 +391,17 @@ public class FruitScale {
         this.outputDevice.print("Promotional products:");
         for (Product product : this.products) {
             // If product is promotional and if products price is per kg
-            if (product instanceof PromoProduct && product.getPrice().isPerKG()) {
+            if (product instanceof PromoProduct & product.getPrice().isPerKG()) {
                 this.outputDevice.print("\n" + "Buy " + ((PromoProduct) product).getPrerequisite() + " kg or more to get "
                         + ((PromoProduct) product).getDiscount().toString() + "% discount");
                 this.outputDevice.print(product.toString());
-                this.outputDevice.print("Price with discount: "
-                        + ((PromoProduct) product).displayReducedPrice());
+                this.outputDevice.print("Price with discount: " + ((PromoProduct) product).displayReducedPrice());
                 // If product is promotional and if products price is not per kg
-            } else if (product instanceof PromoProduct && !product.getPrice().isPerKG()) {
+            } else if (product instanceof PromoProduct & !product.getPrice().isPerKG()) {
                 this.outputDevice.print("\n" + "Buy " + ((PromoProduct) product).getPrerequisite() + " st or more to get "
                         + ((PromoProduct) product).getDiscount().toString() + "% discount");
                 this.outputDevice.print(product.toString());
-                this.outputDevice.print("Price with discount: "
-                        + ((PromoProduct) product).displayReducedPrice());
+                this.outputDevice.print("Price with discount: " + ((PromoProduct) product).displayReducedPrice());
             }
         }
     }
@@ -427,6 +439,19 @@ public class FruitScale {
         productGroups.removeAll(Arrays.asList("", null));
 
         return productGroups;
+    }
+
+
+    private void editPromoProduct() {
+        this.outputDevice.print("Sorry, not yet implemented!");
+    }
+
+    private void tryRemovePromoProduct() {
+        this.outputDevice.print("Sorry, not yet implemented!");
+    }
+
+    private void addPromoProduct() {
+        this.outputDevice.print("Sorry, not yet implemented!");
     }
 
     /**

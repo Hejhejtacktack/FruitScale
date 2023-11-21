@@ -37,6 +37,15 @@ public class Cart {
         if (isDiscountable(product, amount)) {
             Price reduced = product.getDiscount().apply(product.price);
             product.price.setValue(reduced.getValue());
+
+            if (!product.price.isPerKG()) {
+                // Setting all items prices in cart too discounted price.
+                for (Product item : this.items) {
+                    if (item.equals(product)) {
+                        item.price.setValue(reduced.getValue());
+                    }
+                }
+            }
         }
     }
 
